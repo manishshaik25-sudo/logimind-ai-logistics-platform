@@ -2,7 +2,9 @@
 package com.logimind.backend.service;
 
 import com.logimind.backend.entity.Shipment;
+import com.logimind.backend.entity.ShipmentStatus;
 import com.logimind.backend.repository.ShipmentRepository;
+
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -36,14 +38,16 @@ public class ShipmentService {
     public void deleteShipment(Long id) {
         shipmentRepository.deleteById(id);
     }
-    
-public Optional<Shipment> updateShipmentStatus(Long id, String status) {
 
-    return shipmentRepository.findById(id)
-            .map(shipment -> {
-                shipment.setStatus(status);
-                return shipmentRepository.save(shipment);
-            });
-}
+    // Update shipment status using enum
+    public Optional<Shipment> updateShipmentStatus(
+            Long id,
+            ShipmentStatus status) {
 
+        return shipmentRepository.findById(id)
+                .map(shipment -> {
+                    shipment.setStatus(status);
+                    return shipmentRepository.save(shipment);
+                });
+    }
 }

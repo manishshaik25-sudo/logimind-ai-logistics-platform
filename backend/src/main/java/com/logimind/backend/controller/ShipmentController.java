@@ -2,7 +2,10 @@
 package com.logimind.backend.controller;
 
 import com.logimind.backend.entity.Shipment;
+import com.logimind.backend.entity.ShipmentStatus;
 import com.logimind.backend.service.ShipmentService;
+
+import jakarta.validation.Valid;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -10,8 +13,6 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
-import jakarta.validation.Valid;
-import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/shipments")
@@ -23,32 +24,36 @@ public class ShipmentController {
         this.shipmentService = shipmentService;
     }
 
-    // Create shipment
+    // Create a new shipment
     @PostMapping
-public ResponseEntity<Shipment> createShipment(
-        @Valid @RequestBody Shipment shipment) {
+    public ResponseEntity<Shipment> createShipment(
+            @Valid @RequestBody Shipment shipment) {
 
-    Shipment saved = shipmentService.createShipment(shipment);
+        Shipment saved = shipmentService.createShipment(shipment);
 
-    return ResponseEntity.status(HttpStatus.CREATED).body(saved);
-}
-    // Get all shipments
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(saved);
+    }
+
+    // Retrieve all shipments
     @GetMapping
     public List<Shipment> getAllShipments() {
         return shipmentService.getAllShipments();
     }
 
-    // Get shipment by ID
+    // Retrieve shipment by ID
     @GetMapping("/{id}")
     public ResponseEntity<Shipment> getShipmentById(
             @PathVariable Long id) {
 
         return shipmentService.getShipmentById(id)
                 .map(ResponseEntity::ok)
-                .orElseGet(() -> ResponseEntity.notFound().build());
+                .orElseGet(() ->
+                        ResponseEntity.notFound().build());
     }
 
-    // Delete shipment
+    // Delete shipment by ID
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteShipment(
             @PathVariable Long id) {
@@ -61,24 +66,30 @@ public ResponseEntity<Shipment> createShipment(
 
         return ResponseEntity.noContent().build();
     }
-    
 
-@PutMapping("/{id}/status")
-public ResponseEntity<Shipment> updateShipmentStatus(
-        @PathVariable Long id,
-        @RequestBody Map<String, String> request) {
+    // Update shipment status using enum
+    @PutMapping("/{id}/status")
+    public ResponseEntity<Shipment> updateShipmentStatus(
+            @PathVariable Long id,
+            @RequestBody Map<String, String> request) {
 
-    String status = request.get("status");
+        String statusValue = request.get("status");
 
-    if (status == null ||
-            !List.of("CREATED", "IN_TRANSIT", "DELIVERED", "CANCELLED")
-                    .contains(status)) {
-        return ResponseEntity.badRequest().build();
+        if (statusValue == null) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        ShipmentStatus status;
+
+        try {
+            status = ShipmentStatus.valueOf(statusValue);
+        } catch (IllegalArgumentException ex) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        return shipmentService.updateShipmentStatus(id, status)
+                .map(ResponseEntity::ok)
+                .orElseGet(() ->
+                        ResponseEntity.notFound().build());
     }
-
-    return shipmentService.updateShipmentStatus(id, status)
-            .map(ResponseEntity::ok)
-            .orElseGet(() -> ResponseEntity.notFound().build());
-}
-
 }

@@ -4,7 +4,6 @@ package com.logimind.backend.entity;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
-import jakarta.validation.constraints.Pattern;
 
 import java.time.LocalDateTime;
 
@@ -39,12 +38,9 @@ public class Shipment {
     @Column(nullable = false, length = 100)
     private String destination;
 
-    @Pattern(
-        regexp = "CREATED|IN_TRANSIT|DELIVERED|CANCELLED",
-        message = "Invalid shipment status"
-    )
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 30)
-    private String status = "CREATED";
+    private ShipmentStatus status = ShipmentStatus.CREATED;
 
     private LocalDateTime createdAt;
 
@@ -52,12 +48,11 @@ public class Shipment {
     public Shipment() {
     }
 
-    // Set default values before inserting
     @PrePersist
     public void prePersist() {
 
-        if (status == null || status.isBlank()) {
-            status = "CREATED";
+        if (status == null) {
+            status = ShipmentStatus.CREATED;
         }
 
         if (createdAt == null) {
@@ -99,11 +94,11 @@ public class Shipment {
         this.destination = destination;
     }
 
-    public String getStatus() {
+    public ShipmentStatus getStatus() {
         return status;
     }
 
-    public void setStatus(String status) {
+    public void setStatus(ShipmentStatus status) {
         this.status = status;
     }
 

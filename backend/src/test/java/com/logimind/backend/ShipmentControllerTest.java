@@ -3,6 +3,7 @@ package com.logimind.backend;
 
 import com.logimind.backend.controller.ShipmentController;
 import com.logimind.backend.entity.Shipment;
+import com.logimind.backend.entity.ShipmentStatus;
 import com.logimind.backend.service.ShipmentService;
 import com.logimind.backend.exception.GlobalExceptionHandler;
 
@@ -11,8 +12,8 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
-import java.util.Optional;
 import java.util.List;
+import java.util.Optional;
 
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -24,8 +25,7 @@ class ShipmentControllerTest {
     @Test
     void shouldReturnShipmentWhenIdExists() throws Exception {
 
-        ShipmentService shipmentService =
-                mock(ShipmentService.class);
+        ShipmentService shipmentService = mock(ShipmentService.class);
 
         ShipmentController controller =
                 new ShipmentController(shipmentService);
@@ -55,8 +55,7 @@ class ShipmentControllerTest {
     void shouldReturn404WhenShipmentDoesNotExist()
             throws Exception {
 
-        ShipmentService shipmentService =
-                mock(ShipmentService.class);
+        ShipmentService shipmentService = mock(ShipmentService.class);
 
         ShipmentController controller =
                 new ShipmentController(shipmentService);
@@ -78,8 +77,7 @@ class ShipmentControllerTest {
     @Test
     void shouldCreateShipmentSuccessfully() throws Exception {
 
-        ShipmentService shipmentService =
-                mock(ShipmentService.class);
+        ShipmentService shipmentService = mock(ShipmentService.class);
 
         ShipmentController controller =
                 new ShipmentController(shipmentService);
@@ -92,7 +90,7 @@ class ShipmentControllerTest {
         savedShipment.setTrackingNumber("LM1005");
         savedShipment.setOrigin("Virginia");
         savedShipment.setDestination("New York");
-        savedShipment.setStatus("CREATED");
+        savedShipment.setStatus(ShipmentStatus.CREATED);
 
         when(shipmentService.createShipment(any(Shipment.class)))
                 .thenReturn(savedShipment);
@@ -113,7 +111,9 @@ class ShipmentControllerTest {
                 .andExpect(jsonPath("$.trackingNumber")
                         .value("LM1005"))
                 .andExpect(jsonPath("$.origin")
-                        .value("Virginia"));
+                        .value("Virginia"))
+                .andExpect(jsonPath("$.status")
+                        .value("CREATED"));
 
         verify(shipmentService)
                 .createShipment(any(Shipment.class));
@@ -123,8 +123,7 @@ class ShipmentControllerTest {
     @Test
     void shouldReturn400ForInvalidShipment() throws Exception {
 
-        ShipmentService shipmentService =
-                mock(ShipmentService.class);
+        ShipmentService shipmentService = mock(ShipmentService.class);
 
         ShipmentController controller =
                 new ShipmentController(shipmentService);
@@ -162,8 +161,7 @@ class ShipmentControllerTest {
     @Test
     void shouldReturnAllShipments() throws Exception {
 
-        ShipmentService shipmentService =
-                mock(ShipmentService.class);
+        ShipmentService shipmentService = mock(ShipmentService.class);
 
         ShipmentController controller =
                 new ShipmentController(shipmentService);
@@ -177,7 +175,7 @@ class ShipmentControllerTest {
         shipment.setTrackingNumber("LM1001");
         shipment.setOrigin("Virginia");
         shipment.setDestination("New York");
-        shipment.setStatus("CREATED");
+        shipment.setStatus(ShipmentStatus.CREATED);
 
         when(shipmentService.getAllShipments())
                 .thenReturn(List.of(shipment));
@@ -192,159 +190,146 @@ class ShipmentControllerTest {
         verify(shipmentService).getAllShipments();
     }
 
-@Test
-void shouldUpdateShipmentStatusSuccessfully() throws Exception {
+    // TEST 6: Valid status update - HTTP 200
+    @Test
+    void shouldUpdateShipmentStatusSuccessfully() throws Exception {
 
-    // Arrange: Create a mocked service
-    ShipmentService shipmentService =
-            mock(ShipmentService.class);
+        ShipmentService shipmentService = mock(ShipmentService.class);
 
-    ShipmentController controller =
-            new ShipmentController(shipmentService);
+        ShipmentController controller =
+                new ShipmentController(shipmentService);
 
-    MockMvc mockMvc = MockMvcBuilders
-            .standaloneSetup(controller)
-            .build();
+        MockMvc mockMvc = MockMvcBuilders
+                .standaloneSetup(controller)
+                .build();
 
-    // Create the updated shipment
-    Shipment updatedShipment = new Shipment();
-    updatedShipment.setId(1L);
-    updatedShipment.setTrackingNumber("LM1001");
-    updatedShipment.setOrigin("Virginia");
-    updatedShipment.setDestination("New York");
-    updatedShipment.setStatus("IN_TRANSIT");
+        Shipment updatedShipment = new Shipment();
+        updatedShipment.setId(1L);
+        updatedShipment.setTrackingNumber("LM1001");
+        updatedShipment.setOrigin("Virginia");
+        updatedShipment.setDestination("New York");
+        updatedShipment.setStatus(ShipmentStatus.IN_TRANSIT);
 
-    // Mock the service response
-    when(shipmentService.updateShipmentStatus(1L, "IN_TRANSIT"))
-            .thenReturn(Optional.of(updatedShipment));
+        when(shipmentService.updateShipmentStatus(
+                1L, ShipmentStatus.IN_TRANSIT))
+                .thenReturn(Optional.of(updatedShipment));
 
-    // Act and Assert
-    mockMvc.perform(put("/api/shipments/1/status")
-            .contentType(MediaType.APPLICATION_JSON)
-            .content("{\"status\":\"IN_TRANSIT\"}"))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.status")
-                    .value("IN_TRANSIT"))
-            .andExpect(jsonPath("$.trackingNumber")
-                    .value("LM1001"));
+        mockMvc.perform(put("/api/shipments/1/status")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"status\":\"IN_TRANSIT\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status")
+                        .value("IN_TRANSIT"))
+                .andExpect(jsonPath("$.trackingNumber")
+                        .value("LM1001"));
 
-    // Verify the controller called the service
-    verify(shipmentService)
-            .updateShipmentStatus(1L, "IN_TRANSIT");
-}
+        verify(shipmentService)
+                .updateShipmentStatus(
+                        1L, ShipmentStatus.IN_TRANSIT);
+    }
 
-@Test
-void shouldReturn400ForInvalidShipmentStatus() throws Exception {
+    // TEST 7: Invalid status - HTTP 400
+    @Test
+    void shouldReturn400ForInvalidShipmentStatus()
+            throws Exception {
 
-    // Arrange
-    ShipmentService shipmentService =
-            mock(ShipmentService.class);
+        ShipmentService shipmentService = mock(ShipmentService.class);
 
-    ShipmentController controller =
-            new ShipmentController(shipmentService);
+        ShipmentController controller =
+                new ShipmentController(shipmentService);
 
-    MockMvc mockMvc = MockMvcBuilders
-            .standaloneSetup(controller)
-            .build();
+        MockMvc mockMvc = MockMvcBuilders
+                .standaloneSetup(controller)
+                .build();
 
-    // Act and Assert
-    mockMvc.perform(put("/api/shipments/1/status")
-            .contentType(MediaType.APPLICATION_JSON)
-            .content("{\"status\":\"LOST\"}"))
-            .andExpect(status().isBadRequest());
+        mockMvc.perform(put("/api/shipments/1/status")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"status\":\"LOST\"}"))
+                .andExpect(status().isBadRequest());
 
-    // Verify that the service was never called
-    verify(shipmentService, never())
-            .updateShipmentStatus(anyLong(), anyString());
-}
+        verify(shipmentService, never())
+                .updateShipmentStatus(
+                        anyLong(), any(ShipmentStatus.class));
+    }
 
-@Test
-void shouldReturn404WhenUpdatingNonexistentShipment()
-        throws Exception {
+    // TEST 8: Nonexistent shipment status update - HTTP 404
+    @Test
+    void shouldReturn404WhenUpdatingNonexistentShipment()
+            throws Exception {
 
-    // Arrange
-    ShipmentService shipmentService =
-            mock(ShipmentService.class);
+        ShipmentService shipmentService = mock(ShipmentService.class);
 
-    ShipmentController controller =
-            new ShipmentController(shipmentService);
+        ShipmentController controller =
+                new ShipmentController(shipmentService);
 
-    MockMvc mockMvc = MockMvcBuilders
-            .standaloneSetup(controller)
-            .build();
+        MockMvc mockMvc = MockMvcBuilders
+                .standaloneSetup(controller)
+                .build();
 
-    // Mock shipment not found
-    when(shipmentService.updateShipmentStatus(999L, "DELIVERED"))
-            .thenReturn(Optional.empty());
+        when(shipmentService.updateShipmentStatus(
+                999L, ShipmentStatus.DELIVERED))
+                .thenReturn(Optional.empty());
 
-    // Act and Assert
-    mockMvc.perform(put("/api/shipments/999/status")
-            .contentType(MediaType.APPLICATION_JSON)
-            .content("{\"status\":\"DELIVERED\"}"))
-            .andExpect(status().isNotFound());
+        mockMvc.perform(put("/api/shipments/999/status")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"status\":\"DELIVERED\"}"))
+                .andExpect(status().isNotFound());
 
-    // Verify service call
-    verify(shipmentService)
-            .updateShipmentStatus(999L, "DELIVERED");
-}
+        verify(shipmentService)
+                .updateShipmentStatus(
+                        999L, ShipmentStatus.DELIVERED);
+    }
 
-@Test
-void shouldDeleteShipmentSuccessfully() throws Exception {
+    // TEST 9: Delete existing shipment - HTTP 204
+    @Test
+    void shouldDeleteShipmentSuccessfully() throws Exception {
 
-    ShipmentService shipmentService =
-            mock(ShipmentService.class);
+        ShipmentService shipmentService = mock(ShipmentService.class);
 
-    ShipmentController controller =
-            new ShipmentController(shipmentService);
+        ShipmentController controller =
+                new ShipmentController(shipmentService);
 
-    MockMvc mockMvc = MockMvcBuilders
-            .standaloneSetup(controller)
-            .build();
+        MockMvc mockMvc = MockMvcBuilders
+                .standaloneSetup(controller)
+                .build();
 
-    Shipment shipment = new Shipment();
-    shipment.setId(1L);
-    shipment.setTrackingNumber("LM1001");
-    shipment.setOrigin("Virginia");
-    shipment.setDestination("New York");
+        Shipment shipment = new Shipment();
+        shipment.setId(1L);
+        shipment.setTrackingNumber("LM1001");
+        shipment.setOrigin("Virginia");
+        shipment.setDestination("New York");
 
-    // Shipment exists
-    when(shipmentService.getShipmentById(1L))
-            .thenReturn(Optional.of(shipment));
+        when(shipmentService.getShipmentById(1L))
+                .thenReturn(Optional.of(shipment));
 
-    // DELETE request
-    mockMvc.perform(delete("/api/shipments/1"))
-            .andExpect(status().isNoContent());
+        mockMvc.perform(delete("/api/shipments/1"))
+                .andExpect(status().isNoContent());
 
-    // Verify both service calls
-    verify(shipmentService).getShipmentById(1L);
-    verify(shipmentService).deleteShipment(1L);
-}
+        verify(shipmentService).getShipmentById(1L);
+        verify(shipmentService).deleteShipment(1L);
+    }
 
-@Test
-void shouldReturn404WhenDeletingNonexistentShipment()
-        throws Exception {
+    // TEST 10: Delete nonexistent shipment - HTTP 404
+    @Test
+    void shouldReturn404WhenDeletingNonexistentShipment()
+            throws Exception {
 
-    ShipmentService shipmentService =
-            mock(ShipmentService.class);
+        ShipmentService shipmentService = mock(ShipmentService.class);
 
-    ShipmentController controller =
-            new ShipmentController(shipmentService);
+        ShipmentController controller =
+                new ShipmentController(shipmentService);
 
-    MockMvc mockMvc = MockMvcBuilders
-            .standaloneSetup(controller)
-            .build();
+        MockMvc mockMvc = MockMvcBuilders
+                .standaloneSetup(controller)
+                .build();
 
-    // Shipment doesn't exist
-    when(shipmentService.getShipmentById(999L))
-            .thenReturn(Optional.empty());
+        when(shipmentService.getShipmentById(999L))
+                .thenReturn(Optional.empty());
 
-    // DELETE request
-    mockMvc.perform(delete("/api/shipments/999"))
-            .andExpect(status().isNotFound());
+        mockMvc.perform(delete("/api/shipments/999"))
+                .andExpect(status().isNotFound());
 
-    // Verify deletion was not attempted
-    verify(shipmentService).getShipmentById(999L);
-    verify(shipmentService, never()).deleteShipment(999L);
-}
-
+        verify(shipmentService).getShipmentById(999L);
+        verify(shipmentService, never()).deleteShipment(999L);
+    }
 }

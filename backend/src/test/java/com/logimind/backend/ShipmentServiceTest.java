@@ -2,6 +2,7 @@
 package com.logimind.backend;
 
 import com.logimind.backend.entity.Shipment;
+import com.logimind.backend.entity.ShipmentStatus;
 import com.logimind.backend.repository.ShipmentRepository;
 import com.logimind.backend.service.ShipmentService;
 
@@ -12,10 +13,10 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.Mockito.*;
 import java.util.Optional;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class ShipmentServiceTest {
@@ -47,116 +48,126 @@ class ShipmentServiceTest {
 
         verify(shipmentRepository, times(1)).save(shipment);
     }
-    
-@Test
-void shouldReturnShipmentWhenIdExists() {
 
-    // Arrange
-    Shipment shipment = new Shipment();
-    shipment.setTrackingNumber("LM1003");
+    @Test
+    void shouldReturnShipmentWhenIdExists() {
 
-    when(shipmentRepository.findById(1L))
-            .thenReturn(Optional.of(shipment));
+        // Arrange
+        Shipment shipment = new Shipment();
+        shipment.setTrackingNumber("LM1003");
 
-    // Act
-    Optional<Shipment> result =
-            shipmentService.getShipmentById(1L);
+        when(shipmentRepository.findById(1L))
+                .thenReturn(Optional.of(shipment));
 
-    // Assert
-    assertTrue(result.isPresent());
-    assertEquals("LM1003",
-            result.get().getTrackingNumber());
+        // Act
+        Optional<Shipment> result =
+                shipmentService.getShipmentById(1L);
 
-    verify(shipmentRepository).findById(1L);
-}
+        // Assert
+        assertTrue(result.isPresent());
+        assertEquals(
+                "LM1003",
+                result.get().getTrackingNumber()
+        );
 
-@Test
-void shouldReturnEmptyWhenIdDoesNotExist() {
+        verify(shipmentRepository).findById(1L);
+    }
 
-    // Arrange
-    when(shipmentRepository.findById(999L))
-            .thenReturn(Optional.empty());
+    @Test
+    void shouldReturnEmptyWhenIdDoesNotExist() {
 
-    // Act
-    Optional<Shipment> result =
-            shipmentService.getShipmentById(999L);
+        // Arrange
+        when(shipmentRepository.findById(999L))
+                .thenReturn(Optional.empty());
 
-    // Assert
-    assertTrue(result.isEmpty());
+        // Act
+        Optional<Shipment> result =
+                shipmentService.getShipmentById(999L);
 
-    verify(shipmentRepository).findById(999L);
-}
+        // Assert
+        assertTrue(result.isEmpty());
 
-@Test
-void shouldUpdateShipmentStatusWhenIdExists() {
+        verify(shipmentRepository).findById(999L);
+    }
 
-    // Arrange
-    Shipment shipment = new Shipment();
-    shipment.setStatus("CREATED");
+    @Test
+    void shouldUpdateShipmentStatusWhenIdExists() {
 
-    when(shipmentRepository.findById(2L))
-            .thenReturn(Optional.of(shipment));
+        // Arrange
+        Shipment shipment = new Shipment();
+        shipment.setStatus(ShipmentStatus.CREATED);
 
-    when(shipmentRepository.save(shipment))
-            .thenReturn(shipment);
+        when(shipmentRepository.findById(2L))
+                .thenReturn(Optional.of(shipment));
 
-    // Act
-    Optional<Shipment> result =
-            shipmentService.updateShipmentStatus(2L, "IN_TRANSIT");
+        when(shipmentRepository.save(shipment))
+                .thenReturn(shipment);
 
-    // Assert
-    assertTrue(result.isPresent());
-    assertEquals("IN_TRANSIT", result.get().getStatus());
+        // Act
+        Optional<Shipment> result =
+                shipmentService.updateShipmentStatus(
+                        2L,
+                        ShipmentStatus.IN_TRANSIT
+                );
 
-    verify(shipmentRepository).findById(2L);
-    verify(shipmentRepository).save(shipment);
-}
+        // Assert
+        assertTrue(result.isPresent());
+        assertEquals(
+                ShipmentStatus.IN_TRANSIT,
+                result.get().getStatus()
+        );
 
-@Test
-void shouldNotUpdateShipmentWhenIdDoesNotExist() {
+        verify(shipmentRepository).findById(2L);
+        verify(shipmentRepository).save(shipment);
+    }
 
-    // Arrange
-    when(shipmentRepository.findById(999L))
-            .thenReturn(Optional.empty());
+    @Test
+    void shouldNotUpdateShipmentWhenIdDoesNotExist() {
 
-    // Act
-    Optional<Shipment> result =
-            shipmentService.updateShipmentStatus(999L, "IN_TRANSIT");
+        // Arrange
+        when(shipmentRepository.findById(999L))
+                .thenReturn(Optional.empty());
 
-    // Assert
-    assertTrue(result.isEmpty());
+        // Act
+        Optional<Shipment> result =
+                shipmentService.updateShipmentStatus(
+                        999L,
+                        ShipmentStatus.IN_TRANSIT
+                );
 
-    verify(shipmentRepository).findById(999L);
-    verify(shipmentRepository, never()).save(any(Shipment.class));
-}
+        // Assert
+        assertTrue(result.isEmpty());
 
-@Test
-void shouldDeleteShipment() {
+        verify(shipmentRepository).findById(999L);
+        verify(shipmentRepository, never())
+                .save(any(Shipment.class));
+    }
 
-    // Arrange
-    Long shipmentId = 2L;
+    @Test
+    void shouldDeleteShipment() {
 
-    // Act
-    shipmentService.deleteShipment(shipmentId);
+        // Arrange
+        Long shipmentId = 2L;
 
-    // Assert
-    verify(shipmentRepository, times(1))
-            .deleteById(shipmentId);
-}
+        // Act
+        shipmentService.deleteShipment(shipmentId);
 
-@Test
-void shouldDeleteShipmentWithDifferentId() {
+        // Assert
+        verify(shipmentRepository, times(1))
+                .deleteById(shipmentId);
+    }
 
-    // Arrange
-    Long shipmentId = 999L;
+    @Test
+    void shouldDeleteShipmentWithDifferentId() {
 
-    // Act
-    shipmentService.deleteShipment(shipmentId);
+        // Arrange
+        Long shipmentId = 999L;
 
-    // Assert
-    verify(shipmentRepository, times(1))
-            .deleteById(shipmentId);
-}
+        // Act
+        shipmentService.deleteShipment(shipmentId);
 
-
+        // Assert
+        verify(shipmentRepository, times(1))
+                .deleteById(shipmentId);
+    }
 }
